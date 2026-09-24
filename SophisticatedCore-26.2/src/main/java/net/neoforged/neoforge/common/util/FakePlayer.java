@@ -1,0 +1,15 @@
+package net.neoforged.neoforge.common.util;
+
+import com.mojang.authlib.GameProfile;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+
+/**
+ * FakePlayer shim - extends ServerPlayer for use in automated contexts.
+ */
+public class FakePlayer extends ServerPlayer {
+	public FakePlayer(ServerLevel level, GameProfile profile) {
+		super(level.getServer(), level, profile, ClientInformation.createDefault());
+	}
+}

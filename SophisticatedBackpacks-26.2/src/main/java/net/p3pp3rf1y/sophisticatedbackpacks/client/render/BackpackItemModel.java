@@ -1,0 +1,227 @@
+package net.p3pp3rf1y.sophisticatedbackpacks.client.render;
+
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.item.ItemTintSource;
+import net.minecraft.client.color.item.ItemTintSources;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.dispatch.BlockModelRotation;
+import net.minecraft.client.renderer.item.*;
+import net.minecraft.client.renderer.special.NoDataSpecialModelRenderer;
+import net.minecraft.client.resources.model.ModelBaker;
+import net.minecraft.client.resources.model.ResolvedModel;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.resources.model.geometry.QuadCollection;
+import net.minecraft.client.resources.model.sprite.TextureSlots;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.ItemOwner;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackWrapper;
+import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.IBackpackWrapper;
+import net.p3pp3rf1y.sophisticatedcore.renderdata.RenderData;
+import net.p3pp3rf1y.sophisticatedcore.renderdata.RenderDataHandler;
+import net.p3pp3rf1y.sophisticatedcore.renderdata.TankPosition;
+import org.joml.Matrix4fc;
+import org.joml.Vector3fc;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
+public class BackpackItemModel implements ItemModel {
+	private final BackpackBlockModel.BlockStateModel baseModel;
+	private final List<ItemTintSource> tints;
+	private final Supplier<Vector3fc[]> extents;
+	private final ModelRenderProperties properties;
+	@Nullable
+	private final BakedQuad displayItemQuad;
+
+	public BackpackItemModel(BackpackBlockModel.BlockStateModel baseModel, ModelRenderProperties properties, List<ItemTintSource> tints) {
+		this.baseModel = baseModel;
+		this.tints = tints;
+		extents = Suppliers.memoize(() -> CuboidItemModelWrapper.computeExtents(baseModel.getQuads()));
+		this.properties = properties;
+		if (baseModel instanceof BackpackBlockModel.BlockStateModel backpackModel) {
+			displayItemQuad = backpackModel.getDisplayItemQuad();
+		} else {
+			displayItemQuad = null;
+		}
+	}
+
+	@Override
+	public void update(ItemStackRenderState stackRenderState, ItemStack stack, ItemModelResolver itemModelResolver, ItemDisplayContext displayContext,
+			@Nullable ClientLevel clientLevel, @Nullable ItemOwner itemOwner, int seed) {
+		stackRenderState.appendModelIdentityElement(this);
+		final int[] tints = new int[this.tints.size()];
+		LivingEntity livingEntity = itemOwner != null ? itemOwner.asLivingEntity() : null;
+		for (int j = 0; j < tints.length; j++) {
+			tints[j] = this.tints.get(j).calculate(stack, clientLevel, livingEntity);
+			stackRenderState.appendModelIdentityElement(tints[j]);
+		}
+
+		ItemStackRenderState.LayerRenderState renderLayer = stackRenderState.newLayer();
+		if (stack.hasFoil()) {
+			renderLayer.setFoilType(ItemStackRenderState.FoilType.STANDARD);
+			stackRenderState.appendModelIdentityElement(ItemStackRenderState.FoilType.STANDARD);
+		}
+
+		for (int tint : tints) {
+			renderLayer.tintLayers().add(tint);
+		}
+
+		setBackpackModelProperties(stack, stackRenderState);
+
+		renderLayer.setExtents(extents);
+		properties.applyToLayer(renderLayer, displayContext);
+		renderLayer.setUsesBlockLight(true);
+		List<BakedQuad> quads = baseModel.getQuads(displayContext);
+		renderLayer.setParticleMaterial(baseModel.particleMaterial());
+		renderLayer.prepareQuadList().addAll(quads);
+		SpecialRenderer specialRenderer = new SpecialRenderer();
+		specialRenderer.displayItemQuad = this.displayItemQuad;
+		specialRenderer.setModelRenderParameters(
+				renderLayer.tintLayers() == null ? ItemStackRenderState.LayerRenderState.EMPTY_TINTS : renderLayer.tintLayers().toIntArray(), quads);
+		RenderData.DisplayData displayData = BackpackWrapper.fromStack(stack).getRenderDataHandler().getDisplayData();
+
+		if (!displayData.displayItems().isEmpty()) {
+			RenderData.DisplayItemData displayItem = displayData.displayItems().getFirst();
+			ItemStack displayStack = displayItem.createItemStack();
+			stackRenderState.appendModelIdentityElement(displayStack.getItem());
+			stackRenderState.appendModelIdentityElement(displayStack.getComponents());
+			stackRenderState.appendModelIdentityElement(displayItem.rotation());
+			specialRenderer.displayItem = new ItemStackRenderState();
+			itemModelResolver.updateForTopItem(specialRenderer.displayItem, displayStack, ItemDisplayContext.FIXED, clientLevel, null, 0);
+			specialRenderer.displayItemRotation = displayItem.rotation();
+		}
+
+		renderLayer.setupSpecialModel(specialRenderer, specialRenderer.extractArgument(stack));
+	}
+
+	private void setBackpackModelProperties(ItemStack stack, ItemStackRenderState stackRenderState) {
+		if (baseModel instanceof BackpackBlockModel.BlockStateModel backpackModel) {
+			backpackModel.tankRight = false;
+			backpackModel.tankLeft = false;
+			backpackModel.rightTankRenderData = null;
+			backpackModel.leftTankRenderData = null;
+			backpackModel.battery = false;
+			backpackModel.batteryRenderData = null;
+			IBackpackWrapper backpackWrapper = BackpackWrapper.fromStack(stack);
+			RenderDataHandler renderDataHandler = backpackWrapper.getRenderDataHandler();
+			Map<TankPosition, RenderData.TankRenderData> tankRenderData = renderDataHandler.getTankRenderData();
+			tankRenderData.forEach((pos, info) -> {
+				if (pos == TankPosition.LEFT) {
+					backpackModel.tankLeft = true;
+					backpackModel.leftTankRenderData = info;
+					stackRenderState.appendModelIdentityElement(TankPosition.LEFT);
+					info.getFluid().ifPresent(fs -> {
+						stackRenderState.appendModelIdentityElement(fs.getFluid());
+						stackRenderState.appendModelIdentityElement(fs.getComponents());
+					});
+					stackRenderState.appendModelIdentityElement(info.fillRatio());
+				} else {
+					backpackModel.tankRight = true;
+					backpackModel.rightTankRenderData = info;
+					stackRenderState.appendModelIdentityElement(TankPosition.RIGHT);
+					info.getFluid().ifPresent(fs -> {
+						stackRenderState.appendModelIdentityElement(fs.getFluid());
+						stackRenderState.appendModelIdentityElement(fs.getComponents());
+					});
+					stackRenderState.appendModelIdentityElement(info.fillRatio());
+				}
+			});
+
+			renderDataHandler.getBatteryRenderData().ifPresent(batteryRenderData -> {
+				backpackModel.battery = true;
+				backpackModel.batteryRenderData = batteryRenderData;
+				stackRenderState.appendModelIdentityElement("battery");
+				stackRenderState.appendModelIdentityElement(batteryRenderData.chargeRatio());
+			});
+		}
+	}
+
+	public BackpackBlockModel.BlockStateModel getBaseModel() {
+		return baseModel;
+	}
+
+	public record Unbaked(Identifier base, List<ItemTintSource> tints) implements ItemModel.Unbaked {
+		public static final MapCodec<Unbaked> MAP_CODEC = RecordCodecBuilder
+				.mapCodec(
+						builder -> builder
+								.group(Identifier.CODEC.fieldOf("base").forGetter(Unbaked::base),
+										ItemTintSources.CODEC.listOf().optionalFieldOf("tints", List.of()).forGetter(Unbaked::tints))
+								.apply(builder, Unbaked::new));
+
+		@Override
+		public MapCodec<? extends ItemModel.Unbaked> type() {
+			return MAP_CODEC;
+		}
+
+		@Override
+		public ItemModel bake(BakingContext context, Matrix4fc transformation) {
+			ResolvedModel resolved = context.blockModelBaker().getModel(base);
+			if (resolved.wrapped() instanceof BackpackBlockModel baseModel) {
+				TextureSlots textureslots = resolved.getTopTextureSlots();
+				ModelBaker modelbaker = context.blockModelBaker();
+				ModelRenderProperties modelRenderProperties = ModelRenderProperties.fromResolvedModel(modelbaker, resolved, textureslots);
+				return new BackpackItemModel(baseModel.bakeBlockStateModel(modelbaker, resolved, BlockModelRotation.IDENTITY), modelRenderProperties, tints);
+			}
+
+			ModelBaker modelbaker = context.blockModelBaker();
+			ResolvedModel resolvedmodel = modelbaker.getModel(base);
+			TextureSlots textureslots = resolvedmodel.getTopTextureSlots();
+			QuadCollection quads = resolvedmodel.bakeTopGeometry(textureslots, modelbaker, BlockModelRotation.IDENTITY);
+			ModelRenderProperties modelrenderproperties = ModelRenderProperties.fromResolvedModel(modelbaker, resolvedmodel, textureslots);
+			return new CuboidItemModelWrapper(tints, quads, modelrenderproperties, transformation);
+		}
+
+		@Override
+		public void resolveDependencies(Resolver resolver) {
+			resolver.markDependency(base);
+		}
+	}
+
+	public static class SpecialRenderer implements NoDataSpecialModelRenderer {
+		private final Minecraft minecraft = Minecraft.getInstance();
+		@Nullable
+		public ItemStackRenderState displayItem = null;
+		public float displayItemRotation = 0f;
+		@Nullable
+		public BakedQuad displayItemQuad = null;
+		private int[] tintLayers;
+		private List<BakedQuad> baseModel;
+
+		public void setModelRenderParameters(int[] tintLayers, List<BakedQuad> baseModel) {
+			this.tintLayers = tintLayers;
+			this.baseModel = baseModel;
+		}
+
+		@Override
+		public void submit(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int packedLight, int packedOverlay, boolean hasFoil,
+				int outlineColor) {
+			submitNodeCollector.submitItem(poseStack, ItemDisplayContext.NONE, packedLight, packedOverlay, outlineColor, this.tintLayers, this.baseModel,
+					hasFoil ? ItemStackRenderState.FoilType.STANDARD : ItemStackRenderState.FoilType.NONE);
+			if (displayItem != null) {
+				if (displayItemQuad == null) {
+					return;
+				}
+				DisplayItemAnchor.fromQuad(displayItemQuad).applyTransform(poseStack);
+				poseStack.mulPose(Axis.ZP.rotationDegrees(displayItemRotation));
+				displayItem.submit(poseStack, submitNodeCollector, packedLight, packedOverlay, outlineColor);
+			}
+		}
+
+		@Override
+		public void getExtents(Consumer<Vector3fc> consumer) {
+			// noop - not used in backpack item model as they are provided directly by itself
+		}
+	}
+}

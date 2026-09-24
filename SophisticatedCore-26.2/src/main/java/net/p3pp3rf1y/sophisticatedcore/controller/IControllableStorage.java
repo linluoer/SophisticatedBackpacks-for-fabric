@@ -1,0 +1,122 @@
+package net.p3pp3rf1y.sophisticatedcore.controller;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
+import net.p3pp3rf1y.sophisticatedcore.settings.memory.MemorySettingsCategory;
+import net.p3pp3rf1y.sophisticatedcore.util.WorldHelper;
+
+public interface IControllableStorage extends IControllerBoundable {
+
+	IStorageWrapper getStorageWrapper();
+
+	default boolean canConnectStorages() {
+		return true;
+	}
+
+	default boolean hasStorageData() {
+		return true;
+	}
+
+	default BlockPos getControlledStorageBlockPos() {
+		return getStorageBlockPos();
+	}
+
+	default void tryToAddToController() {
+		addToAdjacentController();
+	}
+
+	default void removeFromController() {
+		Level level = getStorageBlockLevel();
+		if (!level.isClientSide()) {
+			getControllerPos().flatMap(p -> WorldHelper.getBlockEntity(level, p, ControllerBlockEntityBase.class))
+					.ifPresent(c -> c.removeStorage(getStorageBlockPos()));
+			removeControllerPos();
+		}
+	}
+
+	@Override
+	default void addToController(Level level, BlockPos pos, BlockPos controllerPos) {
+		WorldHelper.getBlockEntity(level, controllerPos, ControllerBlockEntityBase.class).ifPresent(c -> c.addStorage(getControlledStorageBlockPos()));
+	}
+
+	default void registerController(ControllerBlockEntityBase controllerBlockEntity) {
+		setControllerPos(controllerBlockEntity.getBlockPos());
+		if (hasStorageData() && controllerBlockEntity.getLevel() != null && !controllerBlockEntity.getLevel().isClientSide()) {
+			registerListeners();
+		}
+	}
+
+	default void unregisterController() {
+		removeControllerPos();
+		getStorageWrapper().getInventoryForInputOutput().unregisterStackKeyListeners();
+		getStorageWrapper().getSettingsHandler().getTypeCategory(MemorySettingsCategory.class).unregisterListeners();
+		getStorageWrapper().getInventoryHandler().unregisterFilterItemsChangeListener();
+	}
+
+	private void registerListeners() {
+		registerInventoryStackListeners();
+		getStorageWrapper().getSettingsHandler().getTypeCategory(MemorySettingsCategory.class).registerListeners(
+				i -> runOnController(getStorageBlockLevel(), controller -> controller.addStorageMemorizedItem(getStorageBlockPos(), i)),
+				i -> runOnController(getStorageBlockLevel(), controller -> controller.removeStorageMemorizedItem(getStorageBlockPos(), i)),
+				i -> runOnController(getStorageBlockLevel(), controller -> controller.addStorageMemorizedStack(getStorageBlockPos(), i)),
+				i -> runOnController(getStorageBlockLevel(), controller -> controller.removeStorageMemorizedStack(getStorageBlockPos(), i)));
+		getStorageWrapper().getInventoryHandler().registerFilterItemsChangeListener(
+				items -> runOnController(getStorageBlockLevel(), controller -> controller.setStorageFilterItems(getStorageBlockPos(), items)));
+		getStorageWrapper().registerOnInventoryInputOutputHandlerRefreshListener(this::onInventoryInputOutputHandlerRefresh);
+	}
+
+	default void onInventoryInputOutputHandlerRefresh() {
+		runOnController(getStorageBlockLevel(), controllerBlockEntityBase -> {
+			controllerBlockEntityBase.clearCachedHandler(getStorageBlockPos());
+			controllerBlockEntityBase.updateStorageInputFilter(getStorageBlockPos());
+		});
+	}
+
+	default void registerInventoryStackListeners() {
+		getStorageWrapper().getInventoryForInputOutput().registerTrackingListeners(
+				isk -> runOnController(getStorageBlockLevel(), controller -> controller.addStorageStack(getStorageBlockPos(), isk)),
+				isk -> runOnController(getStorageBlockLevel(), controller -> controller.removeStorageStack(getStorageBlockPos(), isk)),
+				() -> runOnController(getStorageBlockLevel(), controller -> controller.addStorageWithEmptySlots(getStorageBlockPos())),
+				() -> runOnController(getStorageBlockLevel(), controller -> controller.removeStorageWithEmptySlots(getStorageBlockPos())));
+	}
+
+	default void registerWithControllerOnLoad() {
+		getControllerPos().ifPresentOrElse(controllerPos -> {
+			Level level = getStorageBlockLevel();
+			if (!level.isClientSide()) {
+				BlockPos controlledStorageBlockPos = getControlledStorageBlockPos();
+				WorldHelper.getLoadedBlockEntity(level, controllerPos, ControllerBlockEntityBase.class).ifPresent(controller -> {
+					if (controller.isStorageConnected(controlledStorageBlockPos)) {
+						if (hasStorageData()) {
+							controller.addStorageStacksAndRegisterListeners(controlledStorageBlockPos);
+						}
+					} else {
+						removeControllerPos();
+						tryToAddToController();
+					}
+				});
+			}
+		}, this::tryToAddToController);
+	}
+
+	default void changeSlots(int newSlots) {
+		getControllerPos().ifPresent(controllerPos -> {
+			Level level = getStorageBlockLevel();
+			if (!level.isClientSide()) {
+				WorldHelper.getLoadedBlockEntity(level, controllerPos, ControllerBlockEntityBase.class).ifPresent(
+						controller -> controller.changeSlots(getStorageBlockPos(), newSlots, getStorageWrapper().getInventoryForInputOutput().hasEmptySlots()));
+			}
+		});
+	}
+
+	default void updateEmptySlots() {
+		getControllerPos().ifPresent(controllerPos -> {
+			Level level = getStorageBlockLevel();
+			if (!level.isClientSide()) {
+				WorldHelper.getLoadedBlockEntity(level, controllerPos, ControllerBlockEntityBase.class).ifPresent(
+						controller -> controller.updateEmptySlots(getStorageBlockPos(), getStorageWrapper().getInventoryForInputOutput().hasEmptySlots()));
+			}
+		});
+	}
+}
