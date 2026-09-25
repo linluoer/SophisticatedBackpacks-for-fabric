@@ -2,7 +2,7 @@
 
 ## 许可证
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE)。
+本项目采用 GNU General Public License v3.0 。详见 [LICENSE](LICENSE)。
 
 ## 问题反馈
 
