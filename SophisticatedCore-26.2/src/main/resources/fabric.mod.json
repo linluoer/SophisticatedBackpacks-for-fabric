@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": ["${mod_authors}"],
+  "contact": {
+    "homepage": "${mod_display_url}",
+    "issues": "${mod_issue_tracker_url}"
+  },
+  "license": "${mod_license}",
+  "icon": "assets/${mod_id}/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.p3pp3rf1y.sophisticatedcore.fabric.FabricSophisticatedCore"
+    ],
+    "client": [
+      "net.p3pp3rf1y.sophisticatedcore.fabric.FabricSophisticatedCoreClient"
+    ],
+    "jei_mod_plugin": [
+      "net.p3pp3rf1y.sophisticatedcore.compat.recipeviewers.jei.CoreJeiPlugin"
+    ]
+  },
+  "mixins": [
+    "sophisticatedcore.mixins.json"
+  ],
+  "accessWidener": "sophisticatedcore.accesswidener",
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=25"
+  },
+  "suggests": {
+    "jei": "*"
+  }
+}

@@ -1,0 +1,65 @@
+accessWidener v1 official
+
+# ItemEntity
+accessible field net/minecraft/world/entity/item/ItemEntity pickupDelay I
+mutable field net/minecraft/world/entity/item/ItemEntity pickupDelay I
+
+# ShapedRecipe result
+accessible field net/minecraft/world/item/crafting/ShapedRecipe result Lnet/minecraft/world/item/ItemStackTemplate;
+# ShapedRecipe pattern - 开放给 BackpackRecipeViewerDisplays 转换配方使用
+accessible field net/minecraft/world/item/crafting/ShapedRecipe pattern Lnet/minecraft/world/item/crafting/ShapedRecipePattern;
+
+# Slot x / y (public final -> mutable)
+mutable field net/minecraft/world/inventory/Slot x I
+mutable field net/minecraft/world/inventory/Slot y I
+
+# EntityRenderDispatcher.renderers
+accessible field net/minecraft/client/renderer/entity/EntityRenderDispatcher renderers Ljava/util/Map;
+mutable field net/minecraft/client/renderer/entity/EntityRenderDispatcher renderers Ljava/util/Map;
+
+# ItemCombinerMenu
+extendable method net/minecraft/world/inventory/ItemCombinerMenu createInputSlots (Lnet/minecraft/world/inventory/ItemCombinerMenuSlotDefinition;)V
+extendable method net/minecraft/world/inventory/ItemCombinerMenu createContainer (I)Lnet/minecraft/world/SimpleContainer;
+extendable method net/minecraft/world/inventory/ItemCombinerMenu createResultSlot (Lnet/minecraft/world/inventory/ItemCombinerMenuSlotDefinition;)V
+
+# SmithingScreen
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_TRANSLATION Lorg/joml/Vector3fc;
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_ANGLE Lorg/joml/Quaternionfc;
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen EMPTY_SLOT_SMITHING_TEMPLATES Ljava/util/List;
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ERROR_TOOLTIP Lnet/minecraft/network/chat/Component;
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen MISSING_TEMPLATE_TOOLTIP Lnet/minecraft/network/chat/Component;
+
+# CauldronInteraction.Dispatcher.put
+accessible method net/minecraft/core/cauldron/CauldronInteraction$Dispatcher put (Lnet/minecraft/world/item/Item;Lnet/minecraft/core/cauldron/CauldronInteraction;)V
+
+# AbstractContainerScreen - widen protected fields to public for non-subclass access
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen leftPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen topPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen hoveredSlot Lnet/minecraft/world/inventory/Slot;
+extendable method net/minecraft/client/gui/screens/inventory/AbstractContainerScreen getHoveredSlot (DD)Lnet/minecraft/world/inventory/Slot;
+extendable method net/minecraft/client/gui/screens/inventory/AbstractContainerScreen recalculateQuickCraftRemaining ()V
+
+# AbstractContainerScreen - make imageWidth and imageHeight mutable (they are protected final)
+mutable field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageWidth I
+mutable field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageHeight I
+
+# AbstractContainerMenu - widen private fields
+accessible field net/minecraft/world/inventory/AbstractContainerMenu lastSlots Lnet/minecraft/core/NonNullList;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu remoteSlots Lnet/minecraft/core/NonNullList;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu carried Lnet/minecraft/world/item/ItemStack;
+extendable method net/minecraft/world/inventory/AbstractContainerMenu doClick (IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V
+
+# Player - widen protected closeContainer method
+accessible method net/minecraft/world/entity/player/Player closeContainer ()V
+
+# Screen - widen private fields
+accessible field net/minecraft/client/gui/screens/Screen renderables Ljava/util/List;
+
+# CuboidItemModelWrapper - widen private constructor to public
+accessible method net/minecraft/client/renderer/item/CuboidItemModelWrapper <init> (Ljava/util/List;Lnet/minecraft/client/resources/model/geometry/QuadCollection;Lnet/minecraft/client/renderer/item/ModelRenderProperties;Lorg/joml/Matrix4fc;)V
+
+# BlockModelGenerators - widen private ROTATION_HORIZONTAL_FACING field to public
+accessible field net/minecraft/client/data/models/BlockModelGenerators ROTATION_HORIZONTAL_FACING Lnet/minecraft/client/data/models/blockstates/PropertyDispatch;
+
+# ModelTemplates - widen private create method to public
+accessible method net/minecraft/client/data/models/model/ModelTemplates create (Ljava/lang/String;[Lnet/minecraft/client/data/models/model/TextureSlot;)Lnet/minecraft/client/data/models/model/ModelTemplate;

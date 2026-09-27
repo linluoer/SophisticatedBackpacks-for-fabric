@@ -1,0 +1,99 @@
+accessWidener v1 official
+
+# AbstractContainerMenu - widen private fields to protected for access in subclasses
+accessible field net/minecraft/world/inventory/AbstractContainerMenu lastSlots Lnet/minecraft/core/NonNullList;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu remoteSlots Lnet/minecraft/core/NonNullList;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu remoteCarried Lnet/minecraft/world/inventory/RemoteSlot;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu containerListeners Ljava/util/List;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu synchronizer Lnet/minecraft/world/inventory/ContainerSynchronizer;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu suppressRemoteUpdates Z
+accessible field net/minecraft/world/inventory/AbstractContainerMenu quickcraftType I
+accessible field net/minecraft/world/inventory/AbstractContainerMenu quickcraftStatus I
+accessible field net/minecraft/world/inventory/AbstractContainerMenu quickcraftSlots Ljava/util/Set;
+accessible field net/minecraft/world/inventory/AbstractContainerMenu carried Lnet/minecraft/world/item/ItemStack;
+extendable method net/minecraft/world/inventory/AbstractContainerMenu doClick (IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V
+
+# AbstractContainerScreen - widen protected/private fields and methods to public for non-subclass access
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen lastClickSlot Lnet/minecraft/world/inventory/Slot;
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen quickCraftingType I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen quickCraftingButton I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen skipNextRelease Z
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen quickCraftingRemainder I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen doubleclick Z
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen lastQuickMoved Lnet/minecraft/world/item/ItemStack;
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen leftPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen topPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen hoveredSlot Lnet/minecraft/world/inventory/Slot;
+extendable method net/minecraft/client/gui/screens/inventory/AbstractContainerScreen getHoveredSlot (DD)Lnet/minecraft/world/inventory/Slot;
+extendable method net/minecraft/client/gui/screens/inventory/AbstractContainerScreen recalculateQuickCraftRemaining ()V
+extendable method net/minecraft/client/gui/screens/inventory/AbstractContainerScreen isHovering (Lnet/minecraft/world/inventory/Slot;DD)Z
+
+# Screen - widen private fields
+accessible field net/minecraft/client/gui/screens/Screen renderables Ljava/util/List;
+
+# AbstractContainerScreen - make imageWidth and imageHeight mutable (they are protected final)
+mutable field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageWidth I
+mutable field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageHeight I
+
+# EditBox - widen private fields
+accessible field net/minecraft/client/gui/components/EditBox textColor I
+accessible field net/minecraft/client/gui/components/EditBox responder Ljava/util/function/Consumer;
+accessible method net/minecraft/client/gui/components/EditBox isEditable ()Z
+
+# Slot - make x and y non-final (mutable)
+mutable field net/minecraft/world/inventory/Slot x I
+mutable field net/minecraft/world/inventory/Slot y I
+
+# Player - widen protected closeContainer method to public
+accessible method net/minecraft/world/entity/player/Player closeContainer ()V
+
+# ServerPlayerGameMode - widen private isDestroyingBlock field
+accessible field net/minecraft/server/level/ServerPlayerGameMode isDestroyingBlock Z
+
+# ZombieVillager - widen private startConverting method
+accessible method net/minecraft/world/entity/monster/zombie/ZombieVillager startConverting (Ljava/util/UUID;I)V
+
+# ShapedRecipe - widen private pattern field
+accessible field net/minecraft/world/item/crafting/ShapedRecipe pattern Lnet/minecraft/world/item/crafting/ShapedRecipePattern;
+accessible field net/minecraft/world/item/crafting/ShapedRecipe result Lnet/minecraft/world/item/ItemStackTemplate;
+
+# ShapelessRecipe - widen private ingredients field
+accessible field net/minecraft/world/item/crafting/ShapelessRecipe ingredients Ljava/util/List;
+accessible field net/minecraft/world/item/crafting/ShapelessRecipe result Lnet/minecraft/world/item/ItemStackTemplate;
+
+# SingleItemRecipe - widen private result field
+accessible field net/minecraft/world/item/crafting/SingleItemRecipe result Lnet/minecraft/world/item/ItemStackTemplate;
+
+# RecipeManager - widen private recipes field
+accessible field net/minecraft/world/item/crafting/RecipeManager recipes Lnet/minecraft/world/item/crafting/RecipeMap;
+
+# ItemStack - widen private components field
+accessible field net/minecraft/world/item/ItemStack components Lnet/minecraft/core/component/PatchedDataComponentMap;
+
+# ExperienceOrb - widen private setValue method
+accessible method net/minecraft/world/entity/ExperienceOrb setValue (I)V
+
+# ItemEntity - widen private pickupDelay field and INFINITE_PICKUP_DELAY constant
+accessible field net/minecraft/world/entity/item/ItemEntity pickupDelay I
+accessible field net/minecraft/world/entity/item/ItemEntity INFINITE_PICKUP_DELAY I
+
+# Ingredient - widen private values field for access to HolderSet
+accessible field net/minecraft/world/item/crafting/Ingredient values Lnet/minecraft/core/HolderSet;
+
+# ShapedRecipePattern - widen package-private shrink method
+accessible method net/minecraft/world/item/crafting/ShapedRecipePattern shrink (Ljava/util/List;)[Ljava/lang/String;
+
+# AxeItem - widen protected STRIPPABLES map for ToolActionHelper
+accessible field net/minecraft/world/item/AxeItem STRIPPABLES Ljava/util/Map;
+
+# ShovelItem - widen protected FLATTENABLES map for ToolActionHelper
+accessible field net/minecraft/world/item/ShovelItem FLATTENABLES Ljava/util/Map;
+
+# WeatheringCopper - widen package-private getPrevious method for ToolActionHelper
+accessible method net/minecraft/world/level/block/WeatheringCopper getPrevious (Lnet/minecraft/world/level/block/state/BlockState;)Ljava/util/Optional;
+
+# CuboidModel - widen package-private GSON field for model loader support
+accessible field net/minecraft/client/resources/model/cuboid/CuboidModel GSON Lcom/google/gson/Gson;
+
+# ItemTintSources - widen ID_MAPPER field for custom tint source registration
+accessible field net/minecraft/client/color/item/ItemTintSources ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;

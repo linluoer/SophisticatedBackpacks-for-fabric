@@ -1,0 +1,20 @@
+pluginManagement {
+	repositories {
+		mavenLocal()
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+plugins {
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'SophisticatedFabric'
+
+include 'SophisticatedCore-26.2'
+include 'SophisticatedBackpacks-26.2'
